@@ -6,51 +6,126 @@
         <!-- Headers -->
         <div class="p-2 flex items-center font-bold">Original</div>
         <div></div>
-        <div class="p-2 flex items-center justify-between font-bold">AI Generated</div>
+        <div class="p-2 flex items-center font-bold">AI Generated</div>
         <div class="p-2 flex items-center font-bold">Changes</div>
 
         <template v-for="(part, index) in diffParts" :key="index">
-            <!-- Left (Original) -->
-            <div v-if="part.removed || part.added" class="flex flex-col justify-center">
-        <span
-            v-if="part.removed && part.active"
-            class="bg-red-100 p-1 rounded"
-        >
-          {{ part.removed.value }}
-        </span>
-            </div>
-
-            <!-- Buttons -->
-            <div class="flex flex-col justify-center">
-                <div
-                    v-if="part.removed && part.active"
-                    class="justify-between flex bg-red-100 w-full"
-                >
-                    <Button variant="text" size="small" @click="rejectChange(index)">
-                        x
-                    </Button>
-                    <Button variant="text" size="small" @click="acceptChange(index)">
-                        >>
-                    </Button>
+            <template v-if="part.removed || part.added">
+                <!-- Original -->
+                <div class="flex flex-col">
+          <span v-if="part.removed && part.active" class="bg-red-50 p-1 rounded">
+            {{ part.removed.value }}
+          </span>
                 </div>
-            </div>
 
-            <!-- Right (AI generated / merged) -->
-            <div v-if="part.removed || part.added" class="flex flex-col">
-        <span
-            v-if="part.added"
-            :class="['p-1 rounded', part.accepted ? 'bg-red-100' : 'bg-green-100']"
-        >
-          {{ part.added.value }}
-        </span>
-            </div>
+                <!-- Buttons -->
+                <div class="flex flex-col">
+                    <div v-if="part.removed && part.active" class="flex justify-between bg-red-50 w-full">
+                        <Button variant="text" size="small" @click="rejectChange(index)">x</Button>
+                        <Button variant="text" size="small" @click="acceptChange(index)">>></Button>
+                    </div>
+                </div>
 
-            <div v-if="part.removed || part.added" class="flex flex-col justify-center gap-1 px-1"></div>
+                <!-- AI Generated -->
+                <div class="flex flex-col">
+          <span
+              v-if="part.added"
+              :class="['p-1 rounded', part.accepted ? 'bg-red-50' : 'bg-blue-50']"
+          >
+            {{ part.added.value }}
+          </span>
+                </div>
 
-            <!-- Unchanged -->
+                <!-- Change box -->
+                <div v-if="part.removed || part.added" class="flex flex-col gap-1 p-2">
+                    <!-- Replaced -->
+                    <div class="border rounded-xl p-2" v-if="part.changeType === 'Replaced'">
+                        <div class="font-bold mb-1">Replaced</div>
+
+                        <!-- Removed (line-through) -->
+                        <div class="text-sm whitespace-pre-line mb-1 bg-red-50 rounded">
+                            <template v-if="!expandedParts[index]">
+                                {{ truncateText(part.originalRemoved.trim()).visible }}...
+                                <span
+                                    v-if="truncateText(part.originalRemoved.trim()).extraWords > 0"
+                                    @click="toggleExpand(index)"
+                                    class="text-blue-500 cursor-pointer"
+                                >
+                    +{{ truncateText(part.originalRemoved.trim()).extraWords }} words
+                </span>
+                            </template>
+                            <template v-else>
+                                {{ part.originalRemoved.trim() }}
+                            </template>
+                        </div>
+
+                        <!-- Added -->
+                        <div class="text-sm whitespace-pre-line bg-blue-50">
+                            <template v-if="!expandedParts[index]">
+                                {{ truncateText(part.originalAdded.trim()).visible }}...
+                                <span
+                                    v-if="truncateText(part.originalAdded.trim()).extraWords > 0"
+                                    @click="toggleExpand(index)"
+                                    class="text-blue-500 cursor-pointer"
+                                >
+                    +{{ truncateText(part.originalAdded.trim()).extraWords }} words
+                </span>
+                            </template>
+                            <template v-else>
+                                {{ part.originalAdded.trim() }}
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Inserted -->
+                    <div class="border rounded-xl p-2  shadow" v-else-if="part.changeType === 'Inserted'">
+                        <div class="font-bold mb-1">Inserted</div>
+                        <div class="text-sm whitespace-pre-line bg-blue-50 rounded">
+                            <template v-if="!expandedParts[index]">
+                                {{ truncateText(part.originalAdded.trim()).visible }}...
+                                <span
+                                    v-if="truncateText(part.originalAdded.trim()).extraWords > 0"
+                                    @click="toggleExpand(index)"
+                                    class="text-blue-500 cursor-pointer"
+                                >
+                    +{{ truncateText(part.originalAdded.trim()).extraWords }} words
+                </span>
+                            </template>
+                            <template v-else>
+                                {{ part.originalAdded.trim() }}
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Removed -->
+                    <div class="border rounded-xl p-2 shadow" v-else-if="part.changeType === 'Removed'">
+                        <div class="font-bold mb-1">Removed</div>
+                        <div class="text-sm whitespace-pre-line bg-red-50 rounded">
+                            <template v-if="!expandedParts[index]">
+                                {{ truncateText(part.originalRemoved.trim()).visible }}...
+                                <span
+                                    v-if="truncateText(part.originalRemoved.trim()).extraWords > 0"
+                                    @click="toggleExpand(index)"
+                                    class="text-blue-500 cursor-pointer"
+                                >
+                    +{{ truncateText(part.originalRemoved.trim()).extraWords }} words
+                </span>
+                            </template>
+                            <template v-else>
+                                {{ part.originalRemoved.trim() }}
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+
+
+            </template>
+
             <template v-else>
                 <div></div>
-                <div class="flex flex-col">
+                <div></div>
+                <div class="flex flex-col bg-gray-50">
                     {{ part.unchanged.value }}
                 </div>
                 <div></div>
@@ -66,6 +141,7 @@ export default {
     data() {
         return {
             originalText: `Personal Profile
+            another title
 I am a lively and friendly individual with excellent customer services skills and a positive disposition. I am highly
 organised with the ability to remain professional and calm in all situations and rise to a challenge. Self-motivated,
 I possess excellent time management skills and can work well in a team environment.
@@ -82,8 +158,10 @@ processing all payments and any other duties as required.
 Acacia Training & Development, Taunton Work Experience
 May 2015
 Working as an administration assistant in this work experience placement I was responsible for assisting with
-telephone and reception duties, post duties, filing and other general office duties. `,
+telephone and reception duties, post duties, filing and other general office duties.`,
             aiText: `Personal Profile
+            to do: make it so that you can remove this..
+            another title
 A friendly, enthusiastic individual with a strong background in customer service and administrative support. Highly organised and self-motivated with a positive attitude, I excel under pressure and enjoy contributing to a team environment. Professional in all situations, I possess excellent time management skills and a proactive approach to problem-solving.
 
 Key Skills & Achievements
@@ -111,11 +189,20 @@ Assisted with general office administration including filing, post sorting, and 
 Supported staff with ad-hoc clerical tasks, developing an understanding of office procedures.
 
 Education`,
-            diffParts: []
+            diffParts: [],
+            expandedParts: {},
         };
     },
     mounted() {
         this.runDiff();
+    },
+    computed: {
+        trimmedOriginalAdded() {
+            return (part) => part.originalAdded.trim();
+        },
+        trimmedOriginalRemoved() {
+            return (part) => part.originalRemoved.trim();
+        },
     },
     methods: {
         runDiff() {
@@ -131,6 +218,9 @@ Education`,
                         pairedParts.push({
                             removed: part,
                             added: next,
+                            changeType: 'Replaced',
+                            originalRemoved: part.value,
+                            originalAdded: next.value,
                             active: true,
                             accepted: false
                         });
@@ -139,6 +229,9 @@ Education`,
                         pairedParts.push({
                             removed: part,
                             added: null,
+                            changeType: 'Removed',
+                            originalRemoved: part.value,
+                            originalAdded: null,
                             active: true,
                             accepted: false
                         });
@@ -147,6 +240,9 @@ Education`,
                     pairedParts.push({
                         removed: null,
                         added: part,
+                        changeType: 'Inserted',
+                        originalRemoved: null,
+                        originalAdded: part.value,
                         active: true,
                         accepted: false
                     });
@@ -175,8 +271,20 @@ Education`,
                 part.added = { value: part.removed.value };
                 part.removed = null;
                 part.active = false;
-                part.accepted = true; // triggers red background on right
+                part.accepted = true;
             }
+        },
+        toggleExpand(index) {
+            this.expandedParts[index] = !this.expandedParts[index];
+        },
+        truncateText(text, lines = 3) {
+            const words = text.split(/\s+/);
+            const limitedWords = words.slice(0, 50); // rough approximation for 3 lines
+            return {
+                visible: limitedWords.join(" "),
+                remaining: words.slice(50).join(" "),
+                extraWords: words.length - 50,
+            };
         }
     }
 };
