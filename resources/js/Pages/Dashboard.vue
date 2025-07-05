@@ -1,48 +1,85 @@
 <template>
-    <div
-        class="grid h-full"
-        :style="{ gridTemplateColumns: '1fr 0.1fr 1fr 1fr', gridTemplateRows: 'auto' }"
-    >
-        <!-- Headers -->
-        <div class="p-2 flex items-center font-bold">Original</div>
-        <div></div>
-        <div class="p-2 flex items-center font-bold">AI Generated</div>
-        <div class="p-2 flex items-center font-bold">Changes</div>
+    <div class="grid grid-cols-3">
+        <div
+            class="grid h-full col-span-2"
+            :style="{ gridTemplateColumns: '1fr 0.1fr 1fr', gridTemplateRows: 'auto' }"
+        >
+            <!-- Headers -->
+            <div class="p-2 flex items-center font-bold">Original</div>
+            <div></div>
+            <div class="p-2 flex items-center font-bold">AI Generated</div>
 
-        <template v-for="(part, index) in diffParts" :key="index">
-            <template v-if="part.removed || part.added">
-                <!-- Original -->
-                <div class="flex flex-col">
-          <span v-if="part.removed && part.active" class="bg-red-50 p-1 rounded">
-            {{ part.removed.value }}
-          </span>
-                </div>
-
-                <!-- Buttons -->
-                <div class="flex flex-col">
-                    <div v-if="part.removed && part.active" class="flex justify-between bg-red-50 w-full">
-                        <Button variant="text" size="small" @click="rejectChange(index)">x</Button>
-                        <Button variant="text" size="small" @click="acceptChange(index)">>></Button>
+            <template v-for="(part, index) in diffParts" :key="index">
+                <template v-if="part.removed || part.added">
+                    <!-- Original -->
+                    <div class="flex flex-col">
+            <span
+                v-if="part.removed && part.active"
+                :class="[
+                'p-1 rounded',
+                hoveredIndex === index ? 'bg-red-200' : 'bg-red-50'
+              ]"
+            >
+              {{ part.removed.value }}
+            </span>
                     </div>
-                </div>
 
-                <!-- AI Generated -->
-                <div class="flex flex-col">
-          <span
-              v-if="part.added"
-              :class="['p-1 rounded', part.accepted ? 'bg-red-50' : 'bg-blue-50']"
-          >
-            {{ part.added.value }}
-          </span>
-                </div>
+                    <!-- Buttons -->
+                    <div class="flex flex-col">
+                        <div
+                            v-if="part.removed && part.active"
+                            :class="[
+                'flex justify-between w-full',
+                hoveredIndex === index ? 'bg-red-200' : 'bg-red-50'
+              ]"
+                        >
+                            <Button variant="text" size="small" @click="rejectChange(index)">x</Button>
+                            <Button variant="text" size="small" @click="acceptChange(index)">>></Button>
+                        </div>
+                    </div>
 
-                <!-- Change box -->
-                <div v-if="part.removed || part.added" class="flex flex-col gap-1 p-2">
+                    <!-- AI Generated -->
+                    <div class="flex flex-col">
+            <span
+                v-if="part.added"
+                :class="[
+                'p-1 rounded',
+                hoveredIndex === index && part.accepted
+                  ? 'bg-red-200'
+                  : hoveredIndex === index ? 'bg-blue-200' :
+                  part.accepted
+                  ? 'bg-red-50'
+                  : 'bg-blue-50'
+              ]"
+            >
+              {{ part.added.value }}
+            </span>
+                    </div>
+                </template>
+
+                <template v-else>
+                    <div></div>
+                    <div></div>
+                    <div class="flex flex-col bg-gray-50">
+                        {{ part.unchanged.value }}
+                    </div>
+                </template>
+            </template>
+        </div>
+
+        <div>
+            <div class="p-2 flex items-center font-bold">Changes</div>
+            <template v-for="(part, index) in diffParts" :key="index">
+                <div
+                    v-if="part.removed || part.added"
+                    class="flex flex-col gap-1 p-2"
+                    @mouseenter="hoveredIndex = index"
+                    @mouseleave="hoveredIndex = null"
+
+                >
                     <!-- Replaced -->
-                    <div class="border rounded-xl p-2" v-if="part.changeType === 'Replaced'">
+                    <div :class="hoveredIndex === index ? 'border-yellow-500' : ''" class="border-2 rounded-xl p-2" v-if="part.changeType === 'Replaced'">
                         <div class="font-bold mb-1">Replaced</div>
-
-                        <!-- Removed (line-through) -->
                         <div class="text-sm whitespace-pre-line mb-1 bg-red-50 rounded">
                             <template v-if="!expandedParts[index]">
                                 {{ truncateText(part.originalRemoved.trim()).visible }}...
@@ -51,15 +88,13 @@
                                     @click="toggleExpand(index)"
                                     class="text-blue-500 cursor-pointer"
                                 >
-                    +{{ truncateText(part.originalRemoved.trim()).extraWords }} words
+                  +{{ truncateText(part.originalRemoved.trim()).extraWords }} words
                 </span>
                             </template>
                             <template v-else>
                                 {{ part.originalRemoved.trim() }}
                             </template>
                         </div>
-
-                        <!-- Added -->
                         <div class="text-sm whitespace-pre-line bg-blue-50">
                             <template v-if="!expandedParts[index]">
                                 {{ truncateText(part.originalAdded.trim()).visible }}...
@@ -68,7 +103,7 @@
                                     @click="toggleExpand(index)"
                                     class="text-blue-500 cursor-pointer"
                                 >
-                    +{{ truncateText(part.originalAdded.trim()).extraWords }} words
+                  +{{ truncateText(part.originalAdded.trim()).extraWords }} words
                 </span>
                             </template>
                             <template v-else>
@@ -78,7 +113,7 @@
                     </div>
 
                     <!-- Inserted -->
-                    <div class="border rounded-xl p-2  shadow" v-else-if="part.changeType === 'Inserted'">
+                    <div :class="hoveredIndex === index ? 'border-yellow-500' : ''" class="border-2 rounded-xl p-2 shadow" v-else-if="part.changeType === 'Inserted'">
                         <div class="font-bold mb-1">Inserted</div>
                         <div class="text-sm whitespace-pre-line bg-blue-50 rounded">
                             <template v-if="!expandedParts[index]">
@@ -88,7 +123,7 @@
                                     @click="toggleExpand(index)"
                                     class="text-blue-500 cursor-pointer"
                                 >
-                    +{{ truncateText(part.originalAdded.trim()).extraWords }} words
+                  +{{ truncateText(part.originalAdded.trim()).extraWords }} words
                 </span>
                             </template>
                             <template v-else>
@@ -98,7 +133,7 @@
                     </div>
 
                     <!-- Removed -->
-                    <div class="border rounded-xl p-2 shadow" v-else-if="part.changeType === 'Removed'">
+                    <div :class="hoveredIndex === index ? 'border-yellow-500' : ''" class="border-2 rounded-xl p-2 shadow" v-else-if="part.changeType === 'Removed'">
                         <div class="font-bold mb-1">Removed</div>
                         <div class="text-sm whitespace-pre-line bg-red-50 rounded">
                             <template v-if="!expandedParts[index]">
@@ -108,7 +143,7 @@
                                     @click="toggleExpand(index)"
                                     class="text-blue-500 cursor-pointer"
                                 >
-                    +{{ truncateText(part.originalRemoved.trim()).extraWords }} words
+                  +{{ truncateText(part.originalRemoved.trim()).extraWords }} words
                 </span>
                             </template>
                             <template v-else>
@@ -117,20 +152,8 @@
                         </div>
                     </div>
                 </div>
-
-
-
             </template>
-
-            <template v-else>
-                <div></div>
-                <div></div>
-                <div class="flex flex-col bg-gray-50">
-                    {{ part.unchanged.value }}
-                </div>
-                <div></div>
-            </template>
-        </template>
+        </div>
     </div>
 </template>
 
@@ -191,18 +214,11 @@ Supported staff with ad-hoc clerical tasks, developing an understanding of offic
 Education`,
             diffParts: [],
             expandedParts: {},
+            hoveredIndex: null
         };
     },
     mounted() {
         this.runDiff();
-    },
-    computed: {
-        trimmedOriginalAdded() {
-            return (part) => part.originalAdded.trim();
-        },
-        trimmedOriginalRemoved() {
-            return (part) => part.originalRemoved.trim();
-        },
     },
     methods: {
         runDiff() {
@@ -274,16 +290,18 @@ Education`,
                 part.accepted = true;
             }
         },
+
         toggleExpand(index) {
             this.expandedParts[index] = !this.expandedParts[index];
         },
+
         truncateText(text, lines = 3) {
             const words = text.split(/\s+/);
-            const limitedWords = words.slice(0, 50); // rough approximation for 3 lines
+            const limitedWords = words.slice(0, 50); // rough approximation
             return {
                 visible: limitedWords.join(" "),
                 remaining: words.slice(50).join(" "),
-                extraWords: words.length - 50,
+                extraWords: words.length - 50
             };
         }
     }
