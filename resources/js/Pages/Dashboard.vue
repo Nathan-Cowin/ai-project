@@ -2,11 +2,10 @@
     <div class="grid grid-cols-3">
         <div
             class="grid h-full col-span-2"
-            :style="{ gridTemplateColumns: '1fr 0.1fr 1fr', gridTemplateRows: 'auto' }"
+            :style="{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: 'auto' }"
         >
             <!-- Headers -->
             <div class="p-2 flex items-center font-bold">Original</div>
-            <div></div>
             <div class="p-2 flex items-center font-bold">AI Generated</div>
 
             <template v-for="(part, index) in diffParts" :key="index">
@@ -23,21 +22,6 @@
               {{ part.removed.value }}
             </span>
                     </div>
-
-                    <!-- Buttons -->
-                    <div class="flex flex-col">
-                        <div
-                            v-if="part.removed && part.active"
-                            :class="[
-                'flex justify-between w-full',
-                hoveredIndex === index ? 'bg-red-200' : 'bg-red-50'
-              ]"
-                        >
-                            <Button variant="text" size="small" @click="rejectChange(index)">x</Button>
-                            <Button variant="text" size="small" @click="acceptChange(index)">>></Button>
-                        </div>
-                    </div>
-
                     <!-- AI Generated -->
                     <div class="flex flex-col">
             <span
@@ -59,7 +43,6 @@
 
                 <template v-else>
                     <div></div>
-                    <div></div>
                     <div class="flex flex-col bg-gray-50">
                         {{ part.unchanged.value }}
                     </div>
@@ -69,6 +52,10 @@
 
         <div>
             <div class="p-2 flex items-center font-bold">Changes</div>
+            <div class="flex gap-2">
+                <Button icon="pi pi-arrow-up" @click="hoveredIndex = hoveredIndex + 1"></Button>
+                <Button icon="pi pi-arrow-down" @click="hoveredIndex = hoveredIndex - 1"></Button>
+            </div>
             <template v-for="(part, index) in diffParts" :key="index">
                 <div
                     v-if="part.removed || part.added"
@@ -79,7 +66,13 @@
                 >
                     <!-- Replaced -->
                     <div :class="hoveredIndex === index ? 'border-yellow-500' : ''" class="border-2 rounded-xl p-2" v-if="part.changeType === 'Replaced'">
-                        <div class="font-bold mb-1">Replaced</div>
+                        <div class="flex justify-between">
+                            <div class="font-bold mb-1">Replaced</div>
+                            <div>
+                                <Button variant="text" size="small" @click="rejectChange(index)">Accept Change</Button>
+                                <Button variant="text" size="small" severity="danger" @click="acceptChange(index)">Reject Change</Button>
+                            </div>
+                        </div>
                         <div class="text-sm whitespace-pre-line mb-1 bg-red-50 rounded">
                             <template v-if="!expandedParts[index]">
                                 {{ truncateText(part.originalRemoved.trim()).visible }}...
@@ -114,7 +107,13 @@
 
                     <!-- Inserted -->
                     <div :class="hoveredIndex === index ? 'border-yellow-500' : ''" class="border-2 rounded-xl p-2 shadow" v-else-if="part.changeType === 'Inserted'">
-                        <div class="font-bold mb-1">Inserted</div>
+                        <div class="flex justify-between">
+                            <div class="font-bold mb-1">Inserted</div>
+                            <div>
+                                <Button variant="text" size="small" @click="rejectChange(index)">Accept Change</Button>
+                                <Button variant="text" size="small" severity="danger" @click="acceptChange(index)">Reject Change</Button>
+                            </div>
+                        </div>
                         <div class="text-sm whitespace-pre-line bg-blue-50 rounded">
                             <template v-if="!expandedParts[index]">
                                 {{ truncateText(part.originalAdded.trim()).visible }}...
@@ -134,7 +133,16 @@
 
                     <!-- Removed -->
                     <div :class="hoveredIndex === index ? 'border-yellow-500' : ''" class="border-2 rounded-xl p-2 shadow" v-else-if="part.changeType === 'Removed'">
-                        <div class="font-bold mb-1">Removed</div>
+                        <div class="flex justify-between">
+                            <div class="justify-start flex">
+                            <div class="font-bold mb-1">Removed</div>
+                            <Button variant="text" size="small" icon="pi pi-undo"></Button>
+                            </div>
+                            <div>
+                                <Button variant="text" size="small" @click="rejectChange(index)">Accept Change</Button>
+                                <Button variant="text" size="small" severity="danger" @click="acceptChange(index)">Reject Change</Button>
+                            </div>
+                        </div>
                         <div class="text-sm whitespace-pre-line bg-red-50 rounded">
                             <template v-if="!expandedParts[index]">
                                 {{ truncateText(part.originalRemoved.trim()).visible }}...
