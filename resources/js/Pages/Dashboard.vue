@@ -44,7 +44,7 @@
                 <template v-else>
                     <div></div>
                     <div class="flex flex-col bg-gray-50">
-                        {{ part.unchanged.value }}
+                        {{ part.unchanged?.value  }}
                     </div>
                 </template>
             </template>
@@ -53,8 +53,10 @@
         <div>
             <div class="p-2 flex items-center font-bold">Changes</div>
             <div class="flex gap-2">
-                <Button icon="pi pi-arrow-up" @click="hoveredIndex = hoveredIndex + 1"></Button>
-                <Button icon="pi pi-arrow-down" @click="hoveredIndex = hoveredIndex - 1"></Button>
+                <Button text size="large" icon="pi pi-arrow-down" @click="hoveredIndex = hoveredIndex + 1"></Button>
+                <Button text size="large" icon="pi pi-arrow-up" @click="hoveredIndex = hoveredIndex - 1"></Button>
+                <Button text size="large" icon="pi pi-file-check" @click="hoveredIndex = hoveredIndex + 1"></Button>
+                <Button text size="large" severity="danger" icon="pi pi-file-excel" @click="hoveredIndex = hoveredIndex - 1"></Button>
             </div>
             <template v-for="(part, index) in diffParts" :key="index">
                 <div
@@ -69,8 +71,8 @@
                         <div class="flex justify-between">
                             <div class="font-bold mb-1">Replaced</div>
                             <div>
-                                <Button variant="text" size="small" @click="rejectChange(index)">Accept Change</Button>
-                                <Button variant="text" size="small" severity="danger" @click="acceptChange(index)">Reject Change</Button>
+                                <Button variant="text" size="small" @click="acceptChange(index)">Accept Change</Button>
+                                <Button variant="text" size="small" severity="danger" @click="rejectChange(index)">Reject Change</Button>
                             </div>
                         </div>
                         <div class="text-sm whitespace-pre-line mb-1 bg-red-50 rounded">
@@ -110,8 +112,8 @@
                         <div class="flex justify-between">
                             <div class="font-bold mb-1">Inserted</div>
                             <div>
-                                <Button variant="text" size="small" @click="rejectChange(index)">Accept Change</Button>
-                                <Button variant="text" size="small" severity="danger" @click="acceptChange(index)">Reject Change</Button>
+                                <Button variant="text" size="small" @click="acceptChange(index)">Accept Change</Button>
+                                <Button variant="text" size="small" severity="danger" @click="rejectChange(index)">Reject Change</Button>
                             </div>
                         </div>
                         <div class="text-sm whitespace-pre-line bg-blue-50 rounded">
@@ -139,8 +141,8 @@
                             <Button variant="text" size="small" icon="pi pi-undo"></Button>
                             </div>
                             <div>
-                                <Button variant="text" size="small" @click="rejectChange(index)">Accept Change</Button>
-                                <Button variant="text" size="small" severity="danger" @click="acceptChange(index)">Reject Change</Button>
+                                <Button variant="text" size="small" @click="acceptChange(index)">Accept Change</Button>
+                                <Button variant="text" size="small" severity="danger" @click="rejectChange(index)">Reject Change</Button>
                             </div>
                         </div>
                         <div class="text-sm whitespace-pre-line bg-red-50 rounded">
@@ -281,18 +283,19 @@ Education`,
             this.diffParts = pairedParts;
         },
 
-        rejectChange(index) {
-            const part = this.diffParts[index];
-            if (part) {
-                part.removed = null;
-                part.active = false;
-            }
-        },
-
         acceptChange(index) {
             const part = this.diffParts[index];
             if (part) {
-                part.added = { value: part.removed.value };
+                part.removed = { value: part.added?.value };
+                part.active = false;
+                part.accepted = false;
+            }
+        },
+
+        rejectChange(index) {
+            const part = this.diffParts[index];
+            if (part) {
+                part.added = { value: part.removed?.value };
                 part.removed = null;
                 part.active = false;
                 part.accepted = true;
