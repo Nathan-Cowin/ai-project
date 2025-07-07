@@ -1,10 +1,10 @@
 <template>
     <div class="grid grid-cols-3">
+        <!-- Left 2 columns: Original and AI Generated -->
         <div
             class="grid h-full col-span-2"
             :style="{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: 'auto' }"
         >
-            <!-- Headers -->
             <div class="p-2 flex items-center font-bold">Original</div>
             <div class="p-2 flex items-center font-bold">AI Generated</div>
 
@@ -14,6 +14,7 @@
                     <div class="flex flex-col">
             <span
                 v-if="part.removed && part.active"
+                class="whitespace-pre-line"
                 :class="[
                 'p-1 rounded',
                 hoveredIndex === index ? 'bg-red-200' : 'bg-red-50'
@@ -22,16 +23,19 @@
               {{ part.removed.value }}
             </span>
                     </div>
+
                     <!-- AI Generated -->
                     <div class="flex flex-col">
             <span
                 v-if="part.added"
+                class="whitespace-pre-line"
                 :class="[
                 'p-1 rounded',
                 hoveredIndex === index && part.accepted
                   ? 'bg-red-200'
-                  : hoveredIndex === index ? 'bg-blue-200' :
-                  part.accepted
+                  : hoveredIndex === index
+                  ? 'bg-blue-200'
+                  : part.accepted
                   ? 'bg-red-50'
                   : 'bg-blue-50'
               ]"
@@ -44,30 +48,33 @@
                 <template v-else>
                     <div></div>
                     <div class="flex flex-col bg-gray-50">
-                        {{ part.unchanged?.value  }}
+                        {{ part.unchanged?.value }}
                     </div>
                 </template>
             </template>
         </div>
 
+        <!-- Right column: Controls and Details -->
         <div>
             <div class="p-2 flex items-center font-bold">Changes</div>
             <div class="flex gap-2">
-                <Button text size="large" icon="pi pi-arrow-down" @click="hoveredIndex = hoveredIndex + 1"></Button>
-                <Button text size="large" icon="pi pi-arrow-up" @click="hoveredIndex = hoveredIndex - 1"></Button>
-                <Button text size="large" icon="pi pi-file-check" @click="hoveredIndex = hoveredIndex + 1"></Button>
-                <Button text size="large" severity="danger" icon="pi pi-file-excel" @click="hoveredIndex = hoveredIndex - 1"></Button>
+                <Button text size="large" severity="info" icon="pi pi-arrow-up" @click="goToPreviousChange" />
+                <Button text size="large" severity="info" icon="pi pi-arrow-down" @click="goToNextChange" />
+                <Button text size="large" icon="pi pi-file-check" @click="acceptChange(hoveredIndex)" />
+                <Button text size="large" severity="danger" icon="pi pi-file-excel" @click="rejectChange(hoveredIndex)" />
             </div>
+
             <template v-for="(part, index) in diffParts" :key="index">
                 <div
                     v-if="part.removed || part.added"
                     class="flex flex-col gap-1 p-2"
-                    @mouseenter="hoveredIndex = index"
-                    @mouseleave="hoveredIndex = null"
-
+                    :class="hoveredIndex === index ? 'ring-2 ring-yellow-500 rounded-xl' : ''"
                 >
                     <!-- Replaced -->
-                    <div :class="hoveredIndex === index ? 'border-yellow-500' : ''" class="border-2 rounded-xl p-2" v-if="part.changeType === 'Replaced'">
+                    <div
+                        class="border-2 rounded-xl p-2"
+                        v-if="part.changeType === 'Replaced'"
+                    >
                         <div class="flex justify-between">
                             <div class="font-bold mb-1">Replaced</div>
                             <div>
@@ -108,7 +115,10 @@
                     </div>
 
                     <!-- Inserted -->
-                    <div :class="hoveredIndex === index ? 'border-yellow-500' : ''" class="border-2 rounded-xl p-2 shadow" v-else-if="part.changeType === 'Inserted'">
+                    <div
+                        class="border-2 rounded-xl p-2 shadow"
+                        v-else-if="part.changeType === 'Inserted'"
+                    >
                         <div class="flex justify-between">
                             <div class="font-bold mb-1">Inserted</div>
                             <div>
@@ -134,11 +144,14 @@
                     </div>
 
                     <!-- Removed -->
-                    <div :class="hoveredIndex === index ? 'border-yellow-500' : ''" class="border-2 rounded-xl p-2 shadow" v-else-if="part.changeType === 'Removed'">
+                    <div
+                        class="border-2 rounded-xl p-2 shadow"
+                        v-else-if="part.changeType === 'Removed'"
+                    >
                         <div class="flex justify-between">
                             <div class="justify-start flex">
-                            <div class="font-bold mb-1">Removed</div>
-                            <Button variant="text" size="small" icon="pi pi-undo"></Button>
+                                <div class="font-bold mb-1">Removed</div>
+                                <Button variant="text" size="small" icon="pi pi-undo"></Button>
                             </div>
                             <div>
                                 <Button variant="text" size="small" @click="acceptChange(index)">Accept Change</Button>
@@ -168,7 +181,7 @@
 </template>
 
 <script>
-import { diffLines } from 'diff';
+import { diffLines } from "diff";
 
 export default {
     data() {
@@ -224,7 +237,7 @@ Supported staff with ad-hoc clerical tasks, developing an understanding of offic
 Education`,
             diffParts: [],
             expandedParts: {},
-            hoveredIndex: null
+            hoveredIndex: 1,
         };
     },
     mounted() {
@@ -244,43 +257,73 @@ Education`,
                         pairedParts.push({
                             removed: part,
                             added: next,
-                            changeType: 'Replaced',
+                            changeType: "Replaced",
                             originalRemoved: part.value,
                             originalAdded: next.value,
                             active: true,
-                            accepted: false
+                            accepted: false,
                         });
                         i++;
                     } else {
                         pairedParts.push({
                             removed: part,
                             added: null,
-                            changeType: 'Removed',
+                            changeType: "Removed",
                             originalRemoved: part.value,
                             originalAdded: null,
                             active: true,
-                            accepted: false
+                            accepted: false,
                         });
                     }
                 } else if (part.added) {
                     pairedParts.push({
                         removed: null,
                         added: part,
-                        changeType: 'Inserted',
+                        changeType: "Inserted",
                         originalRemoved: null,
                         originalAdded: part.value,
                         active: true,
-                        accepted: false
+                        accepted: false,
                     });
                 } else {
                     pairedParts.push({
                         unchanged: part,
-                        active: true
+                        active: true,
                     });
                 }
             }
 
             this.diffParts = pairedParts;
+        },
+
+        goToNextChange() {
+            const nextIndex = this.findNextIndex(this.hoveredIndex + 1);
+            if (nextIndex !== null) {
+                this.hoveredIndex = nextIndex;
+            }
+        },
+
+        goToPreviousChange() {
+            const prevIndex = this.findPrevIndex(this.hoveredIndex - 1);
+            if (prevIndex !== null) {
+                this.hoveredIndex = prevIndex;
+            }
+        },
+
+        findNextIndex(start) {
+            for (let i = start; i < this.diffParts.length; i++) {
+                const part = this.diffParts[i];
+                if (part.removed || part.added) return i;
+            }
+            return null;
+        },
+
+        findPrevIndex(start) {
+            for (let i = start; i >= 0; i--) {
+                const part = this.diffParts[i];
+                if (part.removed || part.added) return i;
+            }
+            return null;
         },
 
         acceptChange(index) {
@@ -312,10 +355,10 @@ Education`,
             return {
                 visible: limitedWords.join(" "),
                 remaining: words.slice(50).join(" "),
-                extraWords: words.length - 50
+                extraWords: words.length - 50,
             };
-        }
-    }
+        },
+    },
 };
 </script>
 
