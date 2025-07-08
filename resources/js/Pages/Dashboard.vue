@@ -3,29 +3,13 @@
         <!-- Left 2 columns: Original and AI Generated -->
         <div
             class="grid h-full col-span-2"
-            :style="{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: 'auto' }"
+            :style="{ gridTemplateColumns: '1fr', gridTemplateRows: 'auto' }"
         >
-            <div class="p-2 flex items-center font-bold">Original</div>
-            <div class="p-2 flex items-center font-bold">AI Generated</div>
+            <div class="p-2 flex items-center font-bold pl-10">AI Generated</div>
 
             <template v-for="(part, index) in diffParts" :key="index">
                 <template v-if="part.removed || part.added">
-                    <!-- Original -->
-                    <div class="flex flex-col">
-            <span
-                v-if="part.removed && part.active"
-                class="whitespace-pre-line"
-                :class="[
-                'p-1 rounded',
-                hoveredIndex === index ? 'bg-red-200' : 'bg-red-50'
-              ]"
-            >
-              {{ part.removed.value }}
-            </span>
-                    </div>
-
-                    <!-- AI Generated -->
-                    <div class="flex flex-col">
+                    <div class="flex flex-col pl-10">
             <span
                 v-if="part.added"
                 class="whitespace-pre-line"
@@ -46,8 +30,7 @@
                 </template>
 
                 <template v-else>
-                    <div></div>
-                    <div class="flex flex-col bg-gray-50">
+                    <div class="flex flex-col bg-gray-50 pl-10">
                         {{ part.unchanged?.value }}
                     </div>
                 </template>
@@ -62,25 +45,22 @@
                 <Button text size="large" severity="info" icon="pi pi-arrow-down" @click="goToNextChange" />
                 <Button text size="large" icon="pi pi-file-check" @click="acceptChange(hoveredIndex)" />
                 <Button text size="large" severity="danger" icon="pi pi-file-excel" @click="rejectChange(hoveredIndex)" />
+                <Button text size="large" severity="contrast" icon="pi pi-undo" />
             </div>
 
             <template v-for="(part, index) in diffParts" :key="index">
                 <div
                     v-if="part.removed || part.added"
-                    class="flex flex-col gap-1 p-2"
-                    :class="hoveredIndex === index ? 'ring-2 ring-yellow-500 rounded-xl' : ''"
+                    class="flex flex-col gap-1 p-2 transition-opacity duration-300"
+                    :class="[
+            hoveredIndex === index ? 'ring-2 ring-yellow-500 rounded-xl' : '',
+            !part.active ? 'opacity-50 pointer-events-none' : ''
+          ]"
                 >
                     <!-- Replaced -->
-                    <div
-                        class="border-2 rounded-xl p-2"
-                        v-if="part.changeType === 'Replaced'"
-                    >
+                    <div class="border-2 rounded-xl p-2" v-if="part.changeType === 'Replaced'">
                         <div class="flex justify-between">
                             <div class="font-bold mb-1">Replaced</div>
-                            <div>
-                                <Button variant="text" size="small" @click="acceptChange(index)">Accept Change</Button>
-                                <Button variant="text" size="small" severity="danger" @click="rejectChange(index)">Reject Change</Button>
-                            </div>
                         </div>
                         <div class="text-sm whitespace-pre-line mb-1 bg-red-50 rounded">
                             <template v-if="!expandedParts[index]">
@@ -115,16 +95,9 @@
                     </div>
 
                     <!-- Inserted -->
-                    <div
-                        class="border-2 rounded-xl p-2 shadow"
-                        v-else-if="part.changeType === 'Inserted'"
-                    >
+                    <div class="border-2 rounded-xl p-2 shadow" v-else-if="part.changeType === 'Inserted'">
                         <div class="flex justify-between">
                             <div class="font-bold mb-1">Inserted</div>
-                            <div>
-                                <Button variant="text" size="small" @click="acceptChange(index)">Accept Change</Button>
-                                <Button variant="text" size="small" severity="danger" @click="rejectChange(index)">Reject Change</Button>
-                            </div>
                         </div>
                         <div class="text-sm whitespace-pre-line bg-blue-50 rounded">
                             <template v-if="!expandedParts[index]">
@@ -144,18 +117,10 @@
                     </div>
 
                     <!-- Removed -->
-                    <div
-                        class="border-2 rounded-xl p-2 shadow"
-                        v-else-if="part.changeType === 'Removed'"
-                    >
+                    <div class="border-2 rounded-xl p-2 shadow" v-else-if="part.changeType === 'Removed'">
                         <div class="flex justify-between">
                             <div class="justify-start flex">
                                 <div class="font-bold mb-1">Removed</div>
-                                <Button variant="text" size="small" icon="pi pi-undo"></Button>
-                            </div>
-                            <div>
-                                <Button variant="text" size="small" @click="acceptChange(index)">Accept Change</Button>
-                                <Button variant="text" size="small" severity="danger" @click="rejectChange(index)">Reject Change</Button>
                             </div>
                         </div>
                         <div class="text-sm whitespace-pre-line bg-red-50 rounded">
@@ -333,6 +298,7 @@ Education`,
                 part.active = false;
                 part.accepted = false;
             }
+            this.goToNextChange()
         },
 
         rejectChange(index) {
@@ -343,6 +309,7 @@ Education`,
                 part.active = false;
                 part.accepted = true;
             }
+            this.goToNextChange()
         },
 
         toggleExpand(index) {
