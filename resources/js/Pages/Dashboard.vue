@@ -43,9 +43,29 @@
             <div class="flex gap-2">
                 <Button text size="large" severity="info" icon="pi pi-arrow-up" @click="goToPreviousChange" />
                 <Button text size="large" severity="info" icon="pi pi-arrow-down" @click="goToNextChange" />
-                <Button text size="large" icon="pi pi-file-check" @click="acceptChange(hoveredIndex)" />
-                <Button text size="large" severity="danger" icon="pi pi-file-excel" @click="rejectChange(hoveredIndex)" />
-                <Button text size="large" severity="contrast" icon="pi pi-undo" />
+                <Button
+                    text
+                    size="large"
+                    icon="pi pi-file-check"
+                    :disabled="!diffParts[hoveredIndex]?.active"
+                    @click="acceptChange(hoveredIndex)"
+                />
+                <Button
+                    text
+                    size="large"
+                    severity="danger"
+                    icon="pi pi-file-excel"
+                    :disabled="!diffParts[hoveredIndex]?.active"
+                    @click="rejectChange(hoveredIndex)"
+                />
+                <Button
+                    text
+                    size="large"
+                    severity="contrast"
+                    icon="pi pi-undo"
+                    :disabled="diffParts[hoveredIndex]?.active"
+                    @click="undoChange(hoveredIndex)"
+                />
             </div>
 
             <template v-for="(part, index) in diffParts" :key="index">
@@ -293,23 +313,40 @@ Education`,
 
         acceptChange(index) {
             const part = this.diffParts[index];
-            if (part) {
-                part.removed = { value: part.added?.value };
-                part.active = false;
-                part.accepted = false;
-            }
-            this.goToNextChange()
+            if (!part || !part.active) return;
+
+            part.removed = { value: part.added?.value };
+            part.active = false;
+            part.accepted = false;
+            this.goToNextChange();
         },
 
         rejectChange(index) {
             const part = this.diffParts[index];
-            if (part) {
+            if (!part || !part.active) return;
+
+            part.added = { value: part.removed?.value };
+            part.removed = null;
+            part.active = false;
+            part.accepted = true;
+            this.goToNextChange();
+        },
+
+        undoChange(index) {
+            const part = this.diffParts[index];
+            if (!part || part.active) return;
+
+            if (part.accepted) {
+                // If rejected, restore "added"
                 part.added = { value: part.removed?.value };
                 part.removed = null;
-                part.active = false;
-                part.accepted = true;
+            } else {
+                // If accepted, restore original removed/added
+                part.removed = { value: part.originalRemoved };
+                part.added = { value: part.originalAdded };
             }
-            this.goToNextChange()
+
+            part.active = true;
         },
 
         toggleExpand(index) {
@@ -318,7 +355,7 @@ Education`,
 
         truncateText(text, lines = 3) {
             const words = text.split(/\s+/);
-            const limitedWords = words.slice(0, 50); // rough approximation
+            const limitedWords = words.slice(0, 50);
             return {
                 visible: limitedWords.join(" "),
                 remaining: words.slice(50).join(" "),
