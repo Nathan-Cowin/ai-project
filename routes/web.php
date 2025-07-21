@@ -22,3 +22,8 @@ Route::middleware([
         return Inertia::render('Dashboard');
     })->name('dashboard');
 });
+
+//todo: implement properly
+Route::get('/form', function () {
+    return Inertia::render('Form');
+})->name('form');
